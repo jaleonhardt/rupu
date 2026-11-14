@@ -1,0 +1,17 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rupu, panel superadmin</title>
+<style>body{margin:0;font-family:system-ui,sans-serif;background:#F6F4F0;color:#1F1A14}main{max-width:1100px;margin:0 auto;padding:24px 16px}h1{margin:0 0 4px}.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:16px 0}.c{background:#fff;border:1px solid #E2DDD4;border-radius:14px;padding:14px}.c b{display:block;font-size:28px}.c span{font-size:13px;color:#4A4238}table{width:100%;border-collapse:collapse;background:#fff;border-radius:14px;overflow:hidden;font-size:14px}th,td{text-align:left;padding:10px 12px;border-top:1px solid #EFEAE2}th{background:#FAF8F4;border-top:0}.w{overflow-x:auto}input,button{font:inherit;padding:10px 14px;border-radius:10px;border:1px solid #CFC6B8}button{background:#2E7D4F;color:#fff;border:0;font-weight:700;cursor:pointer}#err{color:#B4470F}</style></head>
+<body><main><h1>Rupu</h1><div>Panel superadmin. No muestra ubicaciones de las personas.</div>
+<form id="f" style="margin:16px 0;display:flex;gap:8px;flex-wrap:wrap"><label for="t" style="position:absolute;left:-9999px">Token de superadmin</label><input id="t" type="password" placeholder="Token de superadmin" style="flex:1;min-width:220px"><button>Entrar</button></form><div id="err"></div><div id="out"></div></main>
+<script>
+const $=(i)=>document.getElementById(i),esc=(s)=>String(s??'').replace(/[&<>"]/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clp=(n)=>'$'+String(n).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+$('f').onsubmit=async(e)=>{e.preventDefault();$('err').textContent='';
+  const l=await fetch('/api/admin/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:$('t').value})});
+  if(!l.ok){$('err').textContent='Token incorrecto';return}
+  const {token}=await l.json();const s=await(await fetch('/api/admin/summary',{headers:{authorization:'Bearer '+token}})).json();
+  const k=[['Usuarios/as principales',s.users,s.soloUsers+' sin acompañante'],['Acompañantes',s.caregivers,JSON.stringify(s.subscriptions).replace(/[{}"]/g,'')||'sin planes'],['Ingreso mensual',clp(s.mrrClp),'precio '+clp(s.priceClp)],['Viajes de la semana',s.tripsWeek,s.tripsWeekNoHelpPct==null?'sin datos':s.tripsWeekNoHelpPct+'% sin pedir ayuda'],['Rutas en nivel Sola/solo',s.levels[3]||0,'de '+((s.levels[1]||0)+(s.levels[2]||0)+(s.levels[3]||0))],['Pedidos de ayuda',s.alertsWeek,s.alertsOpen+' abiertos']];
+  $('out').innerHTML='<div class="g">'+k.map(x=>`<div class="c"><span>${esc(x[0])}</span><b>${esc(x[1])}</b><span>${esc(x[2])}</span></div>`).join('')+'</div>'
+   +'<h2>Pasos donde más se pide ayuda</h2><div class="w"><table><tr><th>Instrucción</th><th>Veces</th></tr>'+(s.helpSteps.map(h=>`<tr><td>${esc(h.text)}</td><td>${h.n}</td></tr>`).join('')||'<tr><td colspan="2">Sin pedidos todavía</td></tr>')+'</table></div>'
+   +'<h2>Personas</h2><div class="w"><table><tr><th>Nombre</th><th>Rol</th><th>Comuna</th><th>Rutas</th><th>Autónomas</th><th>Último viaje</th></tr>'+s.people.map(p=>`<tr><td>${esc(p.name)}</td><td>${p.role==='user'?'Usuario/a':'Acompañante'}</td><td>${esc(p.comuna||'')}</td><td>${p.places}</td><td>${p.autonomous}</td><td>${p.lastTrip?new Date(p.lastTrip).toLocaleString('es-CL'):''}</td></tr>`).join('')+'</table></div>';
+};
+</script></body></html>

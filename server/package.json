@@ -1,0 +1,12 @@
+{
+  "name": "rupu-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node --no-warnings src/server.js",
+    "gtfs": "node --no-warnings scripts/build-gtfs.js",
+    "test": "node --no-warnings --test test/flows.test.js"
+  }
+}
